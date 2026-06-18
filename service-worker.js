@@ -3,7 +3,7 @@
 // Supabase always go to the network — we never want to serve stale guest
 // or cab data from cache.
 
-const CACHE_NAME = 'guests-cab-log-v3';
+const CACHE_NAME = 'guests-cab-log-v4';
 const APP_SHELL = [
   './',
   './index.html',
