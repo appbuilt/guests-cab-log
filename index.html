@@ -348,7 +348,7 @@ function today(){return new Date().toISOString().slice(0,10)}
 function fmtDate(d){if(!d)return'—';const[y,m,day]=d.split('-');return`${day}/${m}`}
 function fmtDateLong(d){if(!d)return'';const[y,m,day]=d.split('-');const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return`${parseInt(day)} ${months[parseInt(m)-1]}`}
 function nightsBetween(a,b){const ms=new Date(b||today())-new Date(a);return ms>0?Math.round(ms/86400000):0}
-function isActive(g){return!g.checkout||g.checkout>=today()}
+function isActive(g){return!g.checkout||g.checkout>today()}
 
 // Generate list of dates between checkin and checkout (or today)
 function getDays(g){
