@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+<meta name="description" content="Household tracker for bungalow guest stays and cab trips."/>
+
+<!-- PWA manifest (Android / Chrome / general) -->
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#0F1F3D"/>
+<meta name="background-color" content="#0F1F3D"/>
+
+<!-- Android / Chrome standalone -->
+<meta name="mobile-web-app-capable" content="yes"/>
+
+<!-- Apple-specific (iOS Safari ignores manifest.json for these) -->
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Guests & Cabs"/>
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png"/>
+
+<!-- Favicon -->
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png"/>
+
+<title>Guests & Cab Log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+:root{
+  --navy-deep:#0F1F3D;
+  --navy-mid:#1A3260;
+  --navy-soft:#2A4A8A;
+  --navy-pale:#D6E0F5;
+  --navy-wash:#EDF1FB;
+  --slate:#4A5D7A;
+  --slate-light:#7A8FA8;
+  --ice:#F0F4FA;
+  --fog:#E4EAF4;
+  --white:#FFFFFF;
+  --ink:#111827;
+  --ink-mid:#374151;
+  --ink-light:#6B7280;
+  --border:#CBD5E8;
+  --border-light:#DDE4F0;
+  --accent:#C47A2A;
+  --accent-pale:#FBF0E0;
+  --red:#B83232;
+  --red-pale:#FDEAEA;
+  --serif:'DM Serif Display',serif;
+  --sans:'Inter',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:var(--sans);background:var(--ice);color:var(--ink);min-height:100vh;max-width:430px;margin:0 auto;position:relative}
+
+.top-bar{background:var(--navy-deep);padding:20px 20px 16px;display:flex;align-items:flex-end;justify-content:space-between;position:sticky;top:0;z-index:50}
+.app-title{font-family:var(--serif);font-size:23px;color:var(--white);letter-spacing:0.01em;line-height:1}
+.app-sub{font-size:11px;color:rgba(255,255,255,0.45);margin-top:3px;letter-spacing:0.05em;text-transform:uppercase}
+.header-badge{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.18);border-radius:20px;padding:4px 13px;font-size:12px;color:rgba(255,255,255,0.75);white-space:nowrap}
+
+.prices-bar{background:var(--navy-mid);padding:9px 16px;display:flex;gap:14px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.prices-bar::-webkit-scrollbar{display:none}
+.price-item{white-space:nowrap;font-size:11px;color:rgba(255,255,255,0.55);display:flex;align-items:center;gap:4px}
+.price-item strong{color:rgba(255,255,255,0.9);font-weight:600}
+
+.tabs-bar{background:var(--navy-deep);padding:0 8px;display:flex;border-top:1px solid rgba(255,255,255,0.07)}
+.tab-btn{flex:1;padding:10px 4px 11px;font-size:12px;font-family:var(--sans);font-weight:500;color:rgba(255,255,255,0.42);background:transparent;border:none;cursor:pointer;letter-spacing:0.04em;text-transform:uppercase;border-bottom:2px solid transparent;transition:all .15s}
+.tab-btn.active{color:var(--white);border-bottom:2px solid rgba(255,255,255,0.7)}
+
+.section{padding:16px 14px 100px;display:none}
+.section.active{display:block}
+
+.fab{position:fixed;bottom:26px;right:18px;width:56px;height:56px;border-radius:50%;background:var(--navy-mid);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(15,31,61,0.4);z-index:40;transition:transform .15s}
+.fab:active{transform:scale(0.92)}
+.fab svg{width:24px;height:24px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+
+/* GUEST CARDS */
+.guest-card{background:var(--white);border:1px solid var(--border-light);border-radius:16px;margin-bottom:12px;overflow:hidden;box-shadow:0 1px 4px rgba(15,31,61,0.06)}
+.guest-card-head{padding:14px 16px 11px;border-bottom:1px solid var(--border-light)}
+.guest-name{font-family:var(--serif);font-size:19px;color:var(--navy-deep);line-height:1.2}
+.guest-org{font-size:12px;color:var(--ink-light);margin-top:2px}
+.guest-meta-row{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap}
+.meta-pill{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--slate);background:var(--ice);border-radius:20px;padding:3px 10px;border:1px solid var(--fog)}
+.status-pill{font-size:11px;font-weight:600;border-radius:20px;padding:3px 11px;letter-spacing:0.02em;white-space:nowrap}
+.status-active{background:#DDEEFF;color:#1A3A8A}
+.status-out{background:var(--fog);color:var(--slate-light);border:1px solid var(--border-light)}
+.status-paid{background:#DFF3E3;color:#1F7A40}
+.status-pending{background:var(--accent-pale);color:var(--accent)}
+
+/* DAY TABS */
+.day-tabs-wrap{padding:10px 16px 0;border-bottom:1px solid var(--border-light)}
+.day-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:10px}
+.day-tabs::-webkit-scrollbar{display:none}
+.day-tab{flex-shrink:0;padding:5px 13px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid var(--border);background:var(--white);color:var(--ink-light);cursor:pointer;white-space:nowrap;transition:all .15s}
+.day-tab.active{background:var(--navy-mid);color:var(--white);border-color:var(--navy-mid)}
+.day-tab-add{flex-shrink:0;padding:5px 12px;border-radius:20px;font-size:18px;border:1px dashed var(--border);background:transparent;color:var(--slate-light);cursor:pointer;line-height:1}
+
+/* MEAL SECTION */
+.meal-section{padding:12px 16px 12px}
+.meal-section-title{font-size:11px;font-weight:600;color:var(--slate-light);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:10px}
+.meal-rows{display:flex;flex-direction:column;gap:7px}
+.meal-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.meal-name{font-size:14px;color:var(--ink-mid);flex:1}
+.meal-price{font-size:11px;color:var(--slate-light);min-width:58px;text-align:right}
+.meal-counter{display:flex;align-items:center;border:1px solid var(--border);border-radius:9px;overflow:hidden}
+.count-btn{width:36px;height:36px;border:none;background:var(--ice);font-size:19px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--navy-mid);font-weight:400;flex-shrink:0;line-height:1}
+.count-btn:active{background:var(--navy-pale)}
+.count-display{width:38px;height:36px;border:none;border-left:1px solid var(--border);border-right:1px solid var(--border);background:var(--white);font-size:15px;font-weight:600;color:var(--navy-deep);display:flex;align-items:center;justify-content:center}
+
+/* ALCOHOL ROW */
+.alcohol-row{display:flex;align-items:center;gap:8px;margin-top:7px}
+.alcohol-label{font-size:14px;color:var(--ink-mid);flex:1}
+.alcohol-note{font-size:11px;color:var(--slate-light)}
+.alcohol-input-wrap{display:flex;align-items:center;border:1px solid var(--border);border-radius:9px;overflow:hidden;height:36px}
+.alcohol-prefix{padding:0 8px;font-size:13px;color:var(--slate-light);background:var(--ice);height:100%;display:flex;align-items:center;border-right:1px solid var(--border)}
+.alcohol-input{width:80px;height:100%;border:none;background:var(--white);font-size:14px;font-weight:500;color:var(--navy-deep);padding:0 8px;font-family:var(--sans)}
+.alcohol-input:focus{outline:none}
+
+/* BILL */
+.bill-box{background:var(--accent-pale);border:1px solid #E8C88A;border-radius:12px;padding:13px 15px;margin:0 16px 14px}
+.bill-title{font-size:11px;font-weight:600;color:var(--accent);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:9px}
+.bill-rows{display:flex;flex-direction:column;gap:5px}
+.bill-row{display:flex;justify-content:space-between;font-size:13px;color:var(--ink-mid)}
+.bill-total-row{display:flex;justify-content:space-between;font-size:15px;font-weight:600;color:var(--navy-deep);border-top:1px solid #E8C88A;margin-top:9px;padding-top:9px}
+
+/* CARD ACTIONS */
+.card-actions{display:flex;gap:8px;padding:0 16px 14px;flex-wrap:wrap}
+.action-btn{flex:1;min-width:80px;padding:10px 0;border-radius:9px;font-size:13px;font-family:var(--sans);font-weight:500;cursor:pointer;border:1px solid var(--border-light);background:var(--white);color:var(--ink-mid)}
+.action-btn:active{background:var(--fog)}
+.action-btn.checkout-btn{background:var(--navy-wash);color:var(--navy-mid);border-color:var(--navy-pale)}
+.action-btn.edit-btn{background:var(--fog);color:var(--slate);border-color:var(--border)}
+.action-btn.delete-btn{color:var(--red);border-color:#F0C8C8;background:var(--red-pale)}
+
+/* CAB CARD */
+.cab-card{background:var(--white);border:1px solid var(--border-light);border-radius:16px;margin-bottom:12px;overflow:hidden;box-shadow:0 1px 4px rgba(15,31,61,0.06);padding:14px 16px}
+.cab-route{font-family:var(--serif);font-size:18px;color:var(--navy-deep);line-height:1.25;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.cab-route .arrow{color:var(--slate-light);font-size:15px}
+.cab-meta-row{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap}
+.cab-amount-row{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid var(--border-light)}
+.cab-amount{font-family:var(--serif);font-size:21px;color:var(--navy-deep)}
+.cab-amount.unset{font-size:14px;color:var(--slate-light);font-family:var(--sans)}
+.cab-toggle-btn{font-size:12px;font-weight:600;border-radius:20px;padding:5px 13px;border:none;cursor:pointer;letter-spacing:0.02em}
+.cab-toggle-btn.is-paid{background:#DFF3E3;color:#1F7A40}
+.cab-toggle-btn.is-pending{background:var(--accent-pale);color:var(--accent)}
+
+/* PERSONAL */
+
+/* SUMMARY */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.stat-card{background:var(--white);border:1px solid var(--border-light);border-radius:13px;padding:14px 16px;box-shadow:0 1px 3px rgba(15,31,61,0.05)}
+.stat-label{font-size:11px;color:var(--slate-light);letter-spacing:0.04em;text-transform:uppercase;margin-bottom:4px}
+.stat-value{font-family:var(--serif);font-size:28px;color:var(--navy-deep)}
+.stat-sub{font-size:11px;color:var(--ink-light);margin-top:2px}
+.section-header-label{font-size:11px;font-weight:600;color:var(--slate-light);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:9px}
+.summary-card{background:var(--white);border:1px solid var(--border-light);border-radius:13px;padding:14px 16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(15,31,61,0.05)}
+.summary-meal-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border-light);font-size:14px}
+.summary-meal-row:last-child{border-bottom:none}
+
+.empty-state{text-align:center;padding:48px 20px;color:var(--ink-light)}
+.empty-icon{font-size:38px;margin-bottom:12px;opacity:0.35}
+.empty-text{font-size:15px;color:var(--slate-light);line-height:1.6}
+
+/* PIN GATE */
+.pin-screen{position:fixed;inset:0;background:var(--navy-deep);z-index:500;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;max-width:430px;margin:0 auto}
+.pin-title{font-family:var(--serif);font-size:26px;color:var(--white);margin-bottom:6px;text-align:center}
+.pin-sub{font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:28px;text-align:center}
+.pin-input{width:200px;padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.07);color:var(--white);font-size:22px;text-align:center;letter-spacing:0.3em;font-family:var(--sans)}
+.pin-input:focus{outline:none;border-color:rgba(255,255,255,0.45)}
+.pin-btn{margin-top:16px;width:200px;padding:13px;border-radius:12px;border:none;background:var(--accent);color:var(--white);font-size:15px;font-weight:600;cursor:pointer}
+.pin-btn:active{opacity:0.85}
+.pin-error{margin-top:12px;font-size:13px;color:#FF9B9B;min-height:16px}
+.pin-screen.hidden{display:none}
+
+/* RELOAD BAR */
+.reload-bar{position:fixed;top:0;left:50%;transform:translateX(-50%);max-width:430px;width:100%;background:var(--accent);color:var(--white);font-size:13px;font-weight:500;padding:11px 16px;display:none;align-items:center;justify-content:space-between;z-index:300;box-shadow:0 2px 10px rgba(0,0,0,0.2)}
+.reload-bar.show{display:flex}
+.reload-btn{background:rgba(255,255,255,0.2);border:none;color:var(--white);font-size:12px;font-weight:600;padding:6px 14px;border-radius:20px;cursor:pointer}
+.sync-status{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);max-width:430px;width:calc(100% - 36px);text-align:center;font-size:11px;color:var(--slate-light);z-index:35;pointer-events:none}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(8,16,35,0.55);z-index:200;display:none;align-items:flex-end;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal-sheet{background:var(--white);border-radius:22px 22px 0 0;padding:20px 20px 44px;width:100%;max-width:430px;max-height:92vh;overflow-y:auto}
+.modal-handle{width:36px;height:4px;background:var(--fog);border-radius:2px;margin:0 auto 20px}
+.modal-title{font-family:var(--serif);font-size:21px;color:var(--navy-deep);margin-bottom:18px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--slate-light);letter-spacing:0.05em;text-transform:uppercase;margin-bottom:6px}
+.field input,.field select{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:10px;font-size:15px;font-family:var(--sans);background:var(--white);color:var(--ink);-webkit-appearance:none;appearance:none}
+.field input:focus,.field select:focus{outline:2px solid var(--navy-soft);outline-offset:1px;border-color:var(--navy-soft)}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.save-btn{width:100%;padding:15px;background:var(--navy-mid);color:var(--white);border:none;border-radius:12px;font-size:16px;font-family:var(--sans);font-weight:600;cursor:pointer;margin-top:6px;letter-spacing:0.01em}
+.save-btn:active{background:var(--navy-deep)}
+.cancel-link{display:block;text-align:center;margin-top:14px;font-size:14px;color:var(--slate-light);cursor:pointer;padding:8px}
+</style>
+</head>
+<body>
+
+<!-- PIN GATE -->
+<div class="pin-screen" id="pin-screen">
+  <div class="pin-title">Guests & Cab Log</div>
+  <div class="pin-sub">Enter the household PIN to continue</div>
+  <input class="pin-input" id="pin-input" type="password" inputmode="numeric" maxlength="6" autocomplete="off"/>
+  <button class="pin-btn" onclick="checkPin()">Unlock</button>
+  <div class="pin-error" id="pin-error"></div>
+</div>
+
+<!-- RELOAD BAR -->
+<div class="reload-bar" id="reload-bar">
+  <span>New updates available</span>
+  <button class="reload-btn" onclick="location.reload()">Reload</button>
+</div>
+<div class="sync-status" id="sync-status"></div>
+
+<div class="top-bar">
+  <div>
+    <div class="app-title">Guests & Cab Log</div>
+    <div class="app-sub">Household Tracker</div>
+  </div>
+  <div class="header-badge" id="active-badge">0 staying</div>
+</div>
+
+<div class="prices-bar" id="prices-bar">
+  <div class="price-item">Breakfast <strong>₹150/pp</strong></div>
+  <div class="price-item">Lunch <strong>₹250/pp</strong></div>
+  <div class="price-item">Tea <strong>₹150/pp</strong></div>
+  <div class="price-item">Dinner <strong>₹250/pp</strong></div>
+  <div class="price-item">Alcohol <strong>optional</strong></div>
+</div>
+
+<div class="tabs-bar">
+  <button class="tab-btn active" onclick="switchTab('company')">Company</button>
+  <button class="tab-btn" onclick="switchTab('personal')">Personal</button>
+  <button class="tab-btn" onclick="switchTab('cabs')">Cabs</button>
+  <button class="tab-btn" onclick="switchTab('summary')">Summary</button>
+</div>
+
+<div class="section active" id="tab-company"><div id="company-list"></div></div>
+<div class="section" id="tab-personal"><div id="personal-list"></div></div>
+<div class="section" id="tab-cabs"><div id="cabs-list"></div></div>
+<div class="section" id="tab-summary">
+  <div class="stat-grid" id="stat-grid"></div>
+  <div class="section-header-label">Meals served — company guests</div>
+  <div class="summary-card" id="meals-summary"></div>
+  <div class="section-header-label" style="margin-top:16px">Cabs</div>
+  <div class="summary-card" id="cabs-summary"></div>
+  <div class="section-header-label" style="margin-top:16px">All guests</div>
+  <div id="all-guests-list"></div>
+</div>
+
+<button class="fab" id="fab-btn" onclick="openFab()" aria-label="Add">
+  <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+</button>
+
+<!-- ADD / EDIT MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-title">Add company guest</div>
+    <div class="field">
+      <label>Name / group</label>
+      <input id="f-name" placeholder="e.g. Mr. Chatterjee & team" autocomplete="off"/>
+    </div>
+    <div class="field" id="f-org-field">
+      <label>Company / organisation</label>
+      <input id="f-org" placeholder="e.g. Goodricke Group Ltd." autocomplete="off"/>
+    </div>
+    <div class="field" id="f-purpose-field">
+      <label>Purpose of visit</label>
+      <input id="f-purpose" placeholder="e.g. Audit, Training, Inspection" autocomplete="off"/>
+    </div>
+    <div class="field" id="f-relation-field" style="display:none">
+      <label>Relation</label>
+      <input id="f-relation" placeholder="e.g. Family, College friends" autocomplete="off"/>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Check-in</label><input id="f-checkin" type="date"/></div>
+      <div class="field"><label>Check-out</label><input id="f-checkout" type="date"/></div>
+    </div>
+    <div class="field">
+      <label>No. of guests</label>
+      <input id="f-count" type="number" min="1" value="2"/>
+    </div>
+    <div class="field">
+      <label>Notes</label>
+      <input id="f-notes" placeholder="Dietary needs, preferences…" autocomplete="off"/>
+    </div>
+    <button class="save-btn" onclick="saveGuest()">Save guest</button>
+    <span class="cancel-link" onclick="closeModal()">Cancel</span>
+  </div>
+</div>
+
+<!-- ADD / EDIT CAB MODAL -->
+<div class="modal-overlay" id="cab-modal-overlay">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="cab-modal-title">Add cab trip</div>
+    <div class="field">
+      <label>Date</label>
+      <input id="cf-date" type="date"/>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>From</label><input id="cf-from" placeholder="e.g. Bungalow" autocomplete="off"/></div>
+      <div class="field"><label>To</label><input id="cf-to" placeholder="e.g. NJP Station" autocomplete="off"/></div>
+    </div>
+    <div class="field">
+      <label>Cab / driver name</label>
+      <input id="cf-cabname" placeholder="e.g. Bablu's Tata Sumo" autocomplete="off"/>
+    </div>
+    <div class="field">
+      <label>Linked guest (optional)</label>
+      <select id="cf-guest"><option value="">— No guest —</option></select>
+    </div>
+    <div class="field">
+      <label>Amount (optional, can add later)</label>
+      <input id="cf-amount" type="number" min="0" placeholder="₹ amount" inputmode="numeric"/>
+    </div>
+    <div class="field">
+      <label>Payment status</label>
+      <select id="cf-status">
+        <option value="pending">Pending</option>
+        <option value="paid">Paid</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Notes</label>
+      <input id="cf-notes" placeholder="Any other details…" autocomplete="off"/>
+    </div>
+    <button class="save-btn" onclick="saveCab()">Save cab trip</button>
+    <span class="cancel-link" onclick="closeCabModal()">Cancel</span>
+  </div>
+</div>
+
+<script>
+// ── Supabase config — replace with your real project values ─────
+const SUPABASE_URL='https://orfdrtcarbxjhmvhzanm.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yZmRydGNhcmJ4amhtdmh6YW5tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3Njk5NDUsImV4cCI6MjA5NzM0NTk0NX0.D7WNx-3ZDGV1DNOVOszafuC7pDt9e98RSvN0xhsZpjw';
+const HOUSEHOLD_PIN='0702';
+
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+const ROW_ID='main';
+
+const PRICES={Breakfast:150,Lunch:250,Tea:150,Dinner:250};
+const MEALS_C=['Breakfast','Lunch','Tea','Dinner'];
+let state={company:[],personal:[],cabs:[],_tab:'company'};
+let _lastKnownUpdatedAt=null;
+let _pollTimer=null;
+
+function today(){return new Date().toISOString().slice(0,10)}
+function fmtDate(d){if(!d)return'—';const[y,m,day]=d.split('-');return`${day}/${m}`}
+function fmtDateLong(d){if(!d)return'';const[y,m,day]=d.split('-');const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return`${parseInt(day)} ${months[parseInt(m)-1]}`}
+function nightsBetween(a,b){const ms=new Date(b||today())-new Date(a);return ms>0?Math.round(ms/86400000):0}
+function isActive(g){return!g.checkout||g.checkout>=today()}
+
+// Generate list of dates between checkin and checkout (or today)
+function getDays(g){
+  const days=[];
+  if(!g.checkin)return days;
+  const end=g.checkout||today();
+  let cur=new Date(g.checkin);
+  const endD=new Date(end);
+  while(cur<=endD){
+    days.push(cur.toISOString().slice(0,10));
+    cur=new Date(cur.getTime()+86400000);
+  }
+  return days;
+}
+
+// ── PIN gate ───────────────────────────────────────────────────
+function checkPin(){
+  const val=document.getElementById('pin-input').value.trim();
+  if(val===HOUSEHOLD_PIN){
+    sessionStorage.setItem('gcl_unlocked','1');
+    document.getElementById('pin-screen').classList.add('hidden');
+    init();
+  }else{
+    document.getElementById('pin-error').textContent='Incorrect PIN, try again';
+    document.getElementById('pin-input').value='';
+  }
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('pin-input').addEventListener('keydown',e=>{if(e.key==='Enter')checkPin()});
+  if(sessionStorage.getItem('gcl_unlocked')==='1'){
+    document.getElementById('pin-screen').classList.add('hidden');
+    init();
+  }else{
+    setTimeout(()=>document.getElementById('pin-input').focus(),100);
+  }
+});
+
+// ── Load / save via Supabase ──────────────────────────────────────
+function setSyncStatus(text){
+  const el=document.getElementById('sync-status');
+  if(!el)return;
+  el.textContent=text;
+  if(text)setTimeout(()=>{if(el.textContent===text)el.textContent=''},2500);
+}
+
+async function load(){
+  try{
+    const{data,error}=await sb.from('app_state').select('data,updated_at').eq('id',ROW_ID).single();
+    if(error)throw error;
+    if(data&&data.data)state=data.data;
+    if(data)_lastKnownUpdatedAt=data.updated_at;
+  }catch(e){
+    console.error('Load failed',e);
+    setSyncStatus('Could not reach server — showing local data only');
+  }
+  if(!state.company)state.company=[];
+  if(!state.personal)state.personal=[];
+  if(!state.cabs)state.cabs=[];
+  if(!state._tab)state._tab='company';
+  document.getElementById('f-checkin').value=today();
+  document.getElementById('cf-date').value=today();
+  state.company.forEach(g=>{if(!g._activeDay)g._activeDay=getDays(g)[0]||today()});
+  render();
+}
+
+async function save(){
+  try{
+    const toStore={company:state.company,personal:state.personal,cabs:state.cabs,_tab:state._tab};
+    const{data,error}=await sb.from('app_state')
+      .update({data:toStore,updated_at:new Date().toISOString()})
+      .eq('id',ROW_ID)
+      .select('updated_at')
+      .single();
+    if(error)throw error;
+    if(data)_lastKnownUpdatedAt=data.updated_at;
+    setSyncStatus('Saved');
+  }catch(e){
+    console.error('Save failed',e);
+    setSyncStatus('Save failed — check your connection');
+  }
+}
+
+async function checkForUpdates(){
+  try{
+    const{data,error}=await sb.from('app_state').select('updated_at').eq('id',ROW_ID).single();
+    if(error||!data)return;
+    if(_lastKnownUpdatedAt&&data.updated_at&&data.updated_at!==_lastKnownUpdatedAt){
+      document.getElementById('reload-bar').classList.add('show');
+    }
+  }catch(e){/* silent - don't bother the user about background poll failures */}
+}
+
+function init(){
+  load();
+  if(_pollTimer)clearInterval(_pollTimer);
+  _pollTimer=setInterval(checkForUpdates,25000);
+}
+
+function switchTab(t){
+  state._tab=t;
+  ['company','personal','cabs','summary'].forEach((x,i)=>{
+    document.getElementById('tab-'+x).classList.toggle('active',x===t);
+    document.querySelectorAll('.tab-btn')[i].classList.toggle('active',x===t);
+  });
+  document.getElementById('fab-btn').style.display=t==='summary'?'none':'flex';
+  document.getElementById('prices-bar').style.display=t==='company'?'flex':'none';
+  if(t==='summary')renderSummary();
+  if(t==='cabs')renderCabs();
+}
+
+// ── Modal (add & edit) ──────────────────────────────────────────
+let _modalMode='company';
+let _editId=null;
+
+function openModal(){
+  _modalMode=state._tab;
+  _editId=null;
+  document.getElementById('modal-title').textContent=_modalMode==='company'?'Add company guest':'Add personal guest';
+  document.getElementById('f-org-field').style.display=_modalMode==='company'?'block':'none';
+  document.getElementById('f-purpose-field').style.display=_modalMode==='company'?'block':'none';
+  document.getElementById('f-relation-field').style.display=_modalMode==='personal'?'block':'none';
+  ['f-name','f-org','f-purpose','f-relation','f-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
+  document.getElementById('f-count').value=_modalMode==='company'?2:1;
+  document.getElementById('f-checkin').value=today();
+  document.getElementById('f-checkout').value='';
+  document.getElementById('modal-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('f-name').focus(),100);
+}
+
+function openEditModal(gid,isPersonal){
+  const list=isPersonal?state.personal:state.company;
+  const g=list.find(x=>x.id===gid);if(!g)return;
+  _modalMode=isPersonal?'personal':'company';
+  _editId=gid;
+  document.getElementById('modal-title').textContent='Edit guest';
+  document.getElementById('f-org-field').style.display=_modalMode==='company'?'block':'none';
+  document.getElementById('f-purpose-field').style.display=_modalMode==='company'?'block':'none';
+  document.getElementById('f-relation-field').style.display=_modalMode==='personal'?'block':'none';
+  document.getElementById('f-name').value=g.name||'';
+  document.getElementById('f-org').value=g.org||'';
+  document.getElementById('f-purpose').value=g.purpose||'';
+  document.getElementById('f-relation').value=g.relation||'';
+  document.getElementById('f-checkin').value=g.checkin||'';
+  document.getElementById('f-checkout').value=g.checkout||'';
+  document.getElementById('f-count').value=g.count||1;
+  document.getElementById('f-notes').value=g.notes||'';
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal(){document.getElementById('modal-overlay').classList.remove('open')}
+
+function openFab(){
+  if(state._tab==='cabs')openCabModal();
+  else openModal();
+}
+
+// ── Cab modal (add & edit) ──────────────────────────────────────
+let _editCabId=null;
+
+function populateGuestOptions(selectedVal){
+  const sel=document.getElementById('cf-guest');
+  const opts=['<option value="">— No guest —</option>'];
+  state.company.forEach(g=>opts.push(`<option value="company:${g.id}">${g.name}${g.org?' ('+g.org+')':''}</option>`));
+  state.personal.forEach(g=>opts.push(`<option value="personal:${g.id}">${g.name}${g.relation?' ('+g.relation+')':''}</option>`));
+  sel.innerHTML=opts.join('');
+  sel.value=selectedVal||'';
+}
+
+function openCabModal(){
+  _editCabId=null;
+  document.getElementById('cab-modal-title').textContent='Add cab trip';
+  document.getElementById('cf-date').value=today();
+  document.getElementById('cf-from').value='';
+  document.getElementById('cf-to').value='';
+  document.getElementById('cf-cabname').value='';
+  document.getElementById('cf-amount').value='';
+  document.getElementById('cf-status').value='pending';
+  document.getElementById('cf-notes').value='';
+  populateGuestOptions('');
+  document.getElementById('cab-modal-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('cf-from').focus(),100);
+}
+
+function openEditCabModal(cid){
+  const c=state.cabs.find(x=>x.id===cid);if(!c)return;
+  _editCabId=cid;
+  document.getElementById('cab-modal-title').textContent='Edit cab trip';
+  document.getElementById('cf-date').value=c.date||today();
+  document.getElementById('cf-from').value=c.from||'';
+  document.getElementById('cf-to').value=c.to||'';
+  document.getElementById('cf-cabname').value=c.cabName||'';
+  document.getElementById('cf-amount').value=c.amount||'';
+  document.getElementById('cf-status').value=c.status||'pending';
+  document.getElementById('cf-notes').value=c.notes||'';
+  populateGuestOptions(c.guestRef||'');
+  document.getElementById('cab-modal-overlay').classList.add('open');
+}
+
+function closeCabModal(){document.getElementById('cab-modal-overlay').classList.remove('open')}
+
+function saveCab(){
+  const from=document.getElementById('cf-from').value.trim();
+  const to=document.getElementById('cf-to').value.trim();
+  if(!from&&!to){document.getElementById('cf-from').focus();return}
+  const date=document.getElementById('cf-date').value||today();
+  const cabName=document.getElementById('cf-cabname').value.trim();
+  const guestRef=document.getElementById('cf-guest').value;
+  const amount=document.getElementById('cf-amount').value?parseFloat(document.getElementById('cf-amount').value):null;
+  const status=document.getElementById('cf-status').value;
+  const notes=document.getElementById('cf-notes').value.trim();
+
+  if(_editCabId){
+    const c=state.cabs.find(x=>x.id===_editCabId);
+    if(c){Object.assign(c,{date,from,to,cabName,guestRef,amount,status,notes})}
+  }else{
+    state.cabs.unshift({id:Date.now(),date,from,to,cabName,guestRef,amount,status,notes});
+  }
+  save();closeCabModal();render();
+}
+
+function deleteCab(cid){
+  if(!confirm('Remove this cab trip?'))return;
+  state.cabs=state.cabs.filter(x=>x.id!==cid);
+  save();render();
+}
+
+function toggleCabStatus(cid){
+  const c=state.cabs.find(x=>x.id===cid);if(!c)return;
+  c.status=c.status==='paid'?'pending':'paid';
+  save();renderCabs();
+}
+
+function guestNameFromRef(ref){
+  if(!ref)return'';
+  const[type,idStr]=ref.split(':');
+  const id=parseInt(idStr);
+  const list=type==='company'?state.company:state.personal;
+  const g=list.find(x=>x.id===id);
+  return g?g.name:'';
+}
+
+function renderCabs(){
+  const el=document.getElementById('cabs-list');
+  if(!state.cabs.length){
+    el.innerHTML=`<div class="empty-state"><div class="empty-icon">🚖</div><div class="empty-text">No cab trips logged yet.<br>Tap + to log one.</div></div>`;return;
+  }
+  el.innerHTML=state.cabs.map(c=>{
+    const guestName=guestNameFromRef(c.guestRef);
+    return`<div class="cab-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+        <div class="cab-route">${c.from||'—'}<span class="arrow">→</span>${c.to||'—'}</div>
+      </div>
+      <div class="cab-meta-row">
+        <span class="meta-pill">📅 ${fmtDate(c.date)}</span>
+        ${c.cabName?`<span class="meta-pill">🚖 ${c.cabName}</span>`:''}
+        ${guestName?`<span class="meta-pill">👤 ${guestName}</span>`:''}
+      </div>
+      ${c.notes?`<div style="font-size:12px;color:var(--ink-light);margin-top:6px;font-style:italic">${c.notes}</div>`:''}
+      <div class="cab-amount-row">
+        ${c.amount!=null?`<div class="cab-amount">₹${c.amount.toLocaleString('en-IN')}</div>`:`<div class="cab-amount unset">Amount not added yet</div>`}
+        <button class="cab-toggle-btn ${c.status==='paid'?'is-paid':'is-pending'}" onclick="toggleCabStatus(${c.id})">${c.status==='paid'?'✓ Paid':'Pending'}</button>
+      </div>
+      <div class="card-actions" style="padding:14px 0 0">
+        <button class="action-btn edit-btn" onclick="openEditCabModal(${c.id})">Edit</button>
+        <button class="action-btn delete-btn" onclick="deleteCab(${c.id})">Remove</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function saveGuest(){
+  const name=document.getElementById('f-name').value.trim();
+  if(!name){document.getElementById('f-name').focus();return}
+  const checkin=document.getElementById('f-checkin').value;
+  const checkout=document.getElementById('f-checkout').value||'';
+  const count=parseInt(document.getElementById('f-count').value)||1;
+  const notes=document.getElementById('f-notes').value.trim();
+
+  if(_editId){
+    // edit existing
+    const list=_modalMode==='personal'?state.personal:state.company;
+    const g=list.find(x=>x.id===_editId);
+    if(g){
+      g.name=name;g.checkin=checkin;g.checkout=checkout;g.count=count;g.notes=notes;
+      if(_modalMode==='company'){g.org=document.getElementById('f-org').value.trim();g.purpose=document.getElementById('f-purpose').value.trim()}
+      else g.relation=document.getElementById('f-relation').value.trim();
+      // reset active day if it falls outside new range
+      const days=getDays(g);
+      if(!days.includes(g._activeDay))g._activeDay=days[0]||today();
+    }
+  } else {
+    const g={id:Date.now(),name,checkin,checkout,count,notes,meals:{},alcoholCost:{},_activeDay:checkin||today()};
+    if(_modalMode==='company'){g.org=document.getElementById('f-org').value.trim();g.purpose=document.getElementById('f-purpose').value.trim();state.company.unshift(g)}
+    else{g.relation=document.getElementById('f-relation').value.trim();state.personal.unshift(g)}
+  }
+  save();closeModal();render();
+}
+
+// ── Meal helpers ───────────────────────────────────────────────
+// meals stored as { "2025-06-01": {Breakfast:3, Lunch:2, ...}, ... }
+function getMealVal(g,date,meal){
+  return (g.meals&&g.meals[date]&&g.meals[date][meal])||0;
+}
+function setMealDay(gid,date,meal,delta){
+  const g=state.company.find(x=>x.id===gid);if(!g)return;
+  if(!g.meals)g.meals={};
+  if(!g.meals[date])g.meals[date]={};
+  g.meals[date][meal]=Math.max(0,(g.meals[date][meal]||0)+delta);
+  save();renderCompany();
+}
+function setAlcohol(gid,date,val){
+  const g=state.company.find(x=>x.id===gid);if(!g)return;
+  if(!g.alcoholCost)g.alcoholCost={};
+  const n=parseFloat(val)||0;
+  if(n>0)g.alcoholCost[date]=n;else delete g.alcoholCost[date];
+  save();renderCompany();
+}
+
+function setActiveDay(gid,date){
+  const g=state.company.find(x=>x.id===gid);if(!g)return;
+  g._activeDay=date;
+  renderCompany();
+}
+
+// ── Bill calc ──────────────────────────────────────────────────
+function calcBill(g){
+  let total=0;const dayRows=[];
+  const days=getDays(g);
+  days.forEach(date=>{
+    const dayMeals=g.meals&&g.meals[date]||{};
+    const alcCost=(g.alcoholCost&&g.alcoholCost[date])||0;
+    let dayTotal=0;const items=[];
+    MEALS_C.forEach(m=>{
+      const n=dayMeals[m]||0;if(!n)return;
+      const amt=n*PRICES[m];dayTotal+=amt;
+      items.push(`${m}: ${n}×₹${PRICES[m]} = ₹${amt.toLocaleString('en-IN')}`);
+    });
+    if(alcCost){dayTotal+=alcCost;items.push(`Alcohol: ₹${alcCost.toLocaleString('en-IN')}`)}
+    if(items.length){total+=dayTotal;dayRows.push({date,items,dayTotal})}
+  });
+  return{dayRows,total};
+}
+
+// ── Render company ─────────────────────────────────────────────
+function renderCompany(){
+  const el=document.getElementById('company-list');
+  if(!state.company.length){
+    el.innerHTML=`<div class="empty-state"><div class="empty-icon">🧾</div><div class="empty-text">No company guests yet.<br>Tap + to add your first guest.</div></div>`;return;
+  }
+  el.innerHTML=state.company.map(g=>{
+    const active=isActive(g);
+    const nights=nightsBetween(g.checkin,g.checkout||undefined);
+    const days=getDays(g);
+    const activeDay=g._activeDay||(days[0]||today());
+    const bill=calcBill(g);
+
+    const dayTabsHtml=days.length?`
+      <div class="day-tabs-wrap">
+        <div class="day-tabs">
+          ${days.map(d=>`<button class="day-tab${d===activeDay?' active':''}" onclick="setActiveDay(${g.id},'${d}')">${fmtDateLong(d)}</button>`).join('')}
+        </div>
+      </div>`:'';
+
+    const activeDayMeals=g.meals&&g.meals[activeDay]||{};
+    const alcVal=(g.alcoholCost&&g.alcoholCost[activeDay])||'';
+
+    const mealRowsHtml=MEALS_C.map(m=>{
+      const val=activeDayMeals[m]||0;
+      return`<div class="meal-row">
+        <span class="meal-name">${m}</span>
+        <span class="meal-price">₹${PRICES[m]}/pp</span>
+        <div class="meal-counter">
+          <button class="count-btn" onclick="setMealDay(${g.id},'${activeDay}','${m}',-1)">−</button>
+          <div class="count-display">${val}</div>
+          <button class="count-btn" onclick="setMealDay(${g.id},'${activeDay}','${m}',1)">+</button>
+        </div>
+      </div>`;
+    }).join('');
+
+    const alcoholRowHtml=`<div class="alcohol-row">
+      <span class="alcohol-label">Alcohol <span class="alcohol-note">(optional)</span></span>
+      <div class="alcohol-input-wrap">
+        <span class="alcohol-prefix">₹</span>
+        <input class="alcohol-input" type="number" min="0" placeholder="0" value="${alcVal}"
+          onchange="setAlcohol(${g.id},'${activeDay}',this.value)"
+          oninput="setAlcohol(${g.id},'${activeDay}',this.value)"
+          inputmode="numeric"/>
+      </div>
+    </div>`;
+
+    const billHtml=bill.total>0?`<div class="bill-box">
+      <div class="bill-title">Reimbursement summary</div>
+      <div class="bill-rows">
+        ${bill.dayRows.map(dr=>`
+          <div style="margin-bottom:6px">
+            <div style="font-size:11px;font-weight:600;color:var(--slate-light);margin-bottom:3px">${fmtDateLong(dr.date)}</div>
+            ${dr.items.map(i=>`<div class="bill-row" style="padding-left:8px"><span style="color:var(--ink-light)">${i}</span></div>`).join('')}
+          </div>`).join('')}
+      </div>
+      <div class="bill-total-row"><span>Total to reimburse</span><span>₹${bill.total.toLocaleString('en-IN')}</span></div>
+    </div>`:'';
+
+    return`<div class="guest-card">
+      <div class="guest-card-head">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+          <div style="flex:1;min-width:0">
+            <div class="guest-name">${g.name}</div>
+            ${g.org?`<div class="guest-org">${g.org}</div>`:''}
+          </div>
+          <span class="status-pill ${active?'status-active':'status-out'}">${active?'Staying':'Checked out'}</span>
+        </div>
+        <div class="guest-meta-row">
+          <span class="meta-pill">📅 ${fmtDate(g.checkin)}${g.checkout?' → '+fmtDate(g.checkout):' → now'}</span>
+          <span class="meta-pill">🌙 ${nights} night${nights!==1?'s':''}</span>
+          <span class="meta-pill">👥 ${g.count} guest${g.count!==1?'s':''}</span>
+          ${g.purpose?`<span class="meta-pill">🎯 ${g.purpose}</span>`:''}
+        </div>
+        ${g.notes?`<div style="font-size:12px;color:var(--ink-light);margin-top:6px;font-style:italic">${g.notes}</div>`:''}
+      </div>
+      ${dayTabsHtml}
+      <div class="meal-section">
+        <div class="meal-section-title">Meals served${days.length?' — '+fmtDateLong(activeDay):''}</div>
+        <div class="meal-rows">${mealRowsHtml}</div>
+        ${alcoholRowHtml}
+      </div>
+      ${billHtml}
+      <div class="card-actions">
+        <button class="action-btn edit-btn" onclick="openEditModal(${g.id},false)">Edit</button>
+        ${active?`<button class="action-btn checkout-btn" onclick="checkout(${g.id},false)">Check out</button>`:''}
+        <button class="action-btn delete-btn" onclick="deleteGuest(${g.id},false)">Remove</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Render personal ────────────────────────────────────────────
+function renderPersonal(){
+  const el=document.getElementById('personal-list');
+  if(!state.personal.length){
+    el.innerHTML=`<div class="empty-state"><div class="empty-icon">🫖</div><div class="empty-text">No personal guests yet.<br>Tap + to log a visit.</div></div>`;return;
+  }
+  el.innerHTML=state.personal.map(g=>{
+    const active=isActive(g);
+    const nights=nightsBetween(g.checkin,g.checkout||undefined);
+    return`<div class="guest-card">
+      <div class="guest-card-head">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+          <div style="flex:1">
+            <div class="guest-name">${g.name}</div>
+            ${g.relation?`<div class="guest-org">${g.relation}</div>`:''}
+          </div>
+          <span class="status-pill ${active?'status-active':'status-out'}">${active?'Staying':'Checked out'}</span>
+        </div>
+        <div class="guest-meta-row">
+          <span class="meta-pill">📅 ${fmtDate(g.checkin)}${g.checkout?' → '+fmtDate(g.checkout):' → now'}</span>
+          <span class="meta-pill">🌙 ${nights} night${nights!==1?'s':''}</span>
+        </div>
+        ${g.notes?`<div style="font-size:12px;color:var(--ink-light);margin-top:6px;font-style:italic">${g.notes}</div>`:''}
+      </div>
+      <div class="card-actions">
+        <button class="action-btn edit-btn" onclick="openEditModal(${g.id},true)">Edit</button>
+        ${active?`<button class="action-btn checkout-btn" onclick="checkout(${g.id},true)">Check out</button>`:''}
+        <button class="action-btn delete-btn" onclick="deleteGuest(${g.id},true)">Remove</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Summary ────────────────────────────────────────────────────
+function renderSummary(){
+  const allG=[...state.company,...state.personal];
+  const active=allG.filter(isActive);
+  const totalNights=allG.reduce((s,g)=>s+(g.checkin&&g.checkout?nightsBetween(g.checkin,g.checkout):0),0);
+  let totalBill=0;state.company.forEach(g=>{totalBill+=calcBill(g).total});
+  const mealTotals={Breakfast:0,Lunch:0,Tea:0,Dinner:0};
+  let totalAlcohol=0;
+  state.company.forEach(g=>{
+    Object.values(g.meals||{}).forEach(dayM=>{MEALS_C.forEach(m=>{mealTotals[m]=(mealTotals[m]||0)+(dayM[m]||0)})});
+    Object.values(g.alcoholCost||{}).forEach(v=>{totalAlcohol+=v});
+  });
+  const cabTotal=state.cabs.reduce((s,c)=>s+(c.amount||0),0);
+  const cabPending=state.cabs.filter(c=>c.status!=='paid').reduce((s,c)=>s+(c.amount||0),0);
+  document.getElementById('stat-grid').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Active guests</div><div class="stat-value">${active.reduce((s,g)=>s+(g.count||1),0)}</div><div class="stat-sub">in bungalow now</div></div>
+    <div class="stat-card"><div class="stat-label">Total stays</div><div class="stat-value">${allG.length}</div><div class="stat-sub">${totalNights} nights total</div></div>
+    <div class="stat-card"><div class="stat-label">Company bill</div><div class="stat-value" style="font-size:20px;padding-top:2px">₹${totalBill.toLocaleString('en-IN')}</div><div class="stat-sub">all visits</div></div>
+    <div class="stat-card"><div class="stat-label">Personal visits</div><div class="stat-value">${state.personal.length}</div><div class="stat-sub">friends & family</div></div>
+    <div class="stat-card"><div class="stat-label">Cab trips</div><div class="stat-value">${state.cabs.length}</div><div class="stat-sub">₹${cabTotal.toLocaleString('en-IN')} total</div></div>
+    <div class="stat-card"><div class="stat-label">Cab pending</div><div class="stat-value" style="font-size:20px;padding-top:2px">₹${cabPending.toLocaleString('en-IN')}</div><div class="stat-sub">not yet paid</div></div>
+  `;
+  document.getElementById('meals-summary').innerHTML=[
+    ...Object.entries(mealTotals).map(([m,v])=>`<div class="summary-meal-row"><span style="color:var(--ink-mid)">${m}</span><span style="font-weight:600;color:var(--navy-deep)">${v} pax${v?` · ₹${(v*PRICES[m]).toLocaleString('en-IN')}`:''}</span></div>`),
+    `<div class="summary-meal-row"><span style="color:var(--ink-mid)">Alcohol</span><span style="font-weight:600;color:var(--navy-deep)">${totalAlcohol?'₹'+totalAlcohol.toLocaleString('en-IN'):'—'}</span></div>`
+  ].join('');
+  const paidCount=state.cabs.filter(c=>c.status==='paid').length;
+  document.getElementById('cabs-summary').innerHTML=state.cabs.length?[
+    `<div class="summary-meal-row"><span style="color:var(--ink-mid)">Total trips</span><span style="font-weight:600;color:var(--navy-deep)">${state.cabs.length}</span></div>`,
+    `<div class="summary-meal-row"><span style="color:var(--ink-mid)">Paid</span><span style="font-weight:600;color:var(--navy-deep)">${paidCount} of ${state.cabs.length}</span></div>`,
+    `<div class="summary-meal-row"><span style="color:var(--ink-mid)">Total amount</span><span style="font-weight:600;color:var(--navy-deep)">₹${cabTotal.toLocaleString('en-IN')}</span></div>`,
+    `<div class="summary-meal-row"><span style="color:var(--ink-mid)">Pending amount</span><span style="font-weight:600;color:var(--accent)">₹${cabPending.toLocaleString('en-IN')}</span></div>`
+  ].join('') : `<div class="summary-meal-row"><span style="color:var(--ink-light)">No cab trips logged yet</span></div>`;
+  document.getElementById('all-guests-list').innerHTML=[...state.company.map(g=>({...g,_type:'Company'})),...state.personal.map(g=>({...g,_type:'Personal'}))].map(g=>`
+    <div class="guest-card" style="margin-bottom:8px">
+      <div class="guest-card-head" style="border-bottom:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <div style="min-width:0;flex:1">
+            <div style="font-size:15px;font-weight:500;color:var(--ink)">${g.name}</div>
+            <div style="font-size:12px;color:var(--ink-light)">${g._type}${g.org?' · '+g.org:g.relation?' · '+g.relation:''} · ${fmtDate(g.checkin)}${g.checkout?' → '+fmtDate(g.checkout):' – now'}</div>
+          </div>
+          <span class="status-pill ${isActive(g)?'status-active':'status-out'}">${isActive(g)?'In':'Out'}</span>
+        </div>
+      </div>
+    </div>`).join('')||'<div class="empty-state" style="padding:20px"><div class="empty-text">No guests logged yet.</div></div>';
+}
+
+function checkout(gid,isPersonal){
+  const list=isPersonal?state.personal:state.company;
+  const g=list.find(x=>x.id===gid);if(!g)return;
+  g.checkout=today();save();render();
+}
+function deleteGuest(gid,isPersonal){
+  if(!confirm('Remove this guest?'))return;
+  if(isPersonal)state.personal=state.personal.filter(x=>x.id!==gid);
+  else state.company=state.company.filter(x=>x.id!==gid);
+  save();render();
+}
+function updateActiveBadge(){
+  const n=[...state.company,...state.personal].filter(isActive).reduce((s,g)=>s+(g.count||1),0);
+  document.getElementById('active-badge').textContent=`${n} staying`;
+}
+function render(){renderCompany();renderPersonal();updateActiveBadge();if(state._tab==='summary')renderSummary();if(state._tab==='cabs')renderCabs()}
+
+document.getElementById('modal-overlay').addEventListener('click',function(e){if(e.target===this)closeModal()});
+document.getElementById('cab-modal-overlay').addEventListener('click',function(e){if(e.target===this)closeCabModal()});
+
+// ── PWA: register service worker for installability + app-shell caching ──
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('service-worker.js').catch(e=>console.error('SW registration failed',e));
+  });
+}
+</script>
+</body>
+</html>
