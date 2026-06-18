@@ -76,7 +76,8 @@ body{font-family:var(--sans);background:var(--ice);color:var(--ink);min-height:1
 
 /* GUEST CARDS */
 .guest-card{background:var(--white);border:1px solid var(--border-light);border-radius:16px;margin-bottom:12px;overflow:hidden;box-shadow:0 1px 4px rgba(15,31,61,0.06)}
-.guest-card-head{padding:14px 16px 11px;border-bottom:1px solid var(--border-light)}
+.guest-card-head{padding:14px 16px 11px;border-bottom:1px solid var(--border-light);cursor:pointer;user-select:none}
+.guest-card.is-collapsed .guest-card-head{border-bottom:none}
 .guest-name{font-family:var(--serif);font-size:19px;color:var(--navy-deep);line-height:1.2}
 .guest-org{font-size:12px;color:var(--ink-light);margin-top:2px}
 .guest-meta-row{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap}
@@ -84,6 +85,11 @@ body{font-family:var(--sans);background:var(--ice);color:var(--ink);min-height:1
 .status-pill{font-size:11px;font-weight:600;border-radius:20px;padding:3px 11px;letter-spacing:0.02em;white-space:nowrap}
 .status-active{background:#DDEEFF;color:#1A3A8A}
 .status-out{background:var(--fog);color:var(--slate-light);border:1px solid var(--border-light)}
+.collapse-chevron{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;color:var(--slate-light);flex-shrink:0;transition:transform .2s}
+.collapse-chevron svg{width:16px;height:16px;stroke:currentColor;stroke-width:2.3;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.guest-card.is-collapsed .collapse-chevron{transform:rotate(-90deg)}
+.collapsed-total-row{display:flex;justify-content:space-between;align-items:center;padding:0 16px 14px;font-size:13px;color:var(--ink-mid)}
+.collapsed-total-row .amt{font-family:var(--serif);font-size:17px;color:var(--navy-deep)}
 .status-paid{background:#DFF3E3;color:#1F7A40}
 .status-pending{background:var(--accent-pale);color:var(--accent)}
 
@@ -118,10 +124,20 @@ body{font-family:var(--sans);background:var(--ice);color:var(--ink);min-height:1
 
 /* BILL */
 .bill-box{background:var(--accent-pale);border:1px solid #E8C88A;border-radius:12px;padding:13px 15px;margin:0 16px 14px}
-.bill-title{font-size:11px;font-weight:600;color:var(--accent);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:9px}
-.bill-rows{display:flex;flex-direction:column;gap:5px}
-.bill-row{display:flex;justify-content:space-between;font-size:13px;color:var(--ink-mid)}
-.bill-total-row{display:flex;justify-content:space-between;font-size:15px;font-weight:600;color:var(--navy-deep);border-top:1px solid #E8C88A;margin-top:9px;padding-top:9px}
+.bill-title{font-size:11px;font-weight:600;color:var(--accent);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px}
+.bill-day{margin-bottom:2px}
+.bill-day+.bill-day{border-top:1px solid #E8C88A;margin-top:6px;padding-top:6px}
+.bill-day-head{display:flex;justify-content:space-between;align-items:center;padding:6px 0 4px}
+.bill-day-date{font-size:12px;font-weight:600;color:var(--slate-light)}
+.bill-day-amt{font-size:13px;font-weight:600;color:var(--navy-deep)}
+.bill-row{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-light);padding:2px 0}
+.bill-seemore{display:flex;justify-content:space-between;align-items:center;padding:10px 0 2px;cursor:pointer;user-select:none;border-top:1px solid #E8C88A;margin-top:6px}
+.bill-seemore-label{font-size:12px;font-weight:600;color:var(--accent)}
+.bill-seemore-amt{font-size:12px;font-weight:600;color:var(--accent)}
+.bill-total-row{display:flex;justify-content:space-between;align-items:baseline;font-size:14px;font-weight:600;color:var(--navy-deep);border-top:1px solid #E8C88A;margin-top:10px;padding-top:10px}
+.bill-filing-row{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+.bill-filing-label{font-size:12px;color:var(--slate)}
+.bill-total-row .amt{font-family:var(--serif);font-size:21px}
 
 /* CARD ACTIONS */
 .card-actions{display:flex;gap:8px;padding:0 16px 14px;flex-wrap:wrap}
@@ -132,7 +148,10 @@ body{font-family:var(--sans);background:var(--ice);color:var(--ink);min-height:1
 .action-btn.delete-btn{color:var(--red);border-color:#F0C8C8;background:var(--red-pale)}
 
 /* CAB CARD */
-.cab-card{background:var(--white);border:1px solid var(--border-light);border-radius:16px;margin-bottom:12px;overflow:hidden;box-shadow:0 1px 4px rgba(15,31,61,0.06);padding:14px 16px}
+.cab-card{background:var(--white);border:1px solid var(--border-light);border-radius:16px;margin-bottom:12px;overflow:hidden;box-shadow:0 1px 4px rgba(15,31,61,0.06)}
+.cab-card-head{padding:14px 16px 11px;cursor:pointer;user-select:none}
+.cab-card-body{padding:0 16px 14px}
+.cab-card.is-collapsed .cab-card-head{padding-bottom:14px}
 .cab-route{font-family:var(--serif);font-size:18px;color:var(--navy-deep);line-height:1.25;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .cab-route .arrow{color:var(--slate-light);font-size:15px}
 .cab-meta-row{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap}
@@ -146,6 +165,13 @@ body{font-family:var(--sans);background:var(--ice);color:var(--ink);min-height:1
 /* PERSONAL */
 
 /* SUMMARY */
+.summary-month-row{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.month-nav-btn{width:34px;height:34px;border-radius:50%;border:1px solid var(--border);background:var(--white);color:var(--navy-mid);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.month-nav-btn svg{width:16px;height:16px;stroke:currentColor;stroke-width:2.3;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.month-nav-btn:active{background:var(--navy-pale)}
+.summary-month-label{font-family:var(--serif);font-size:17px;color:var(--navy-deep);flex:1;text-align:center}
+.month-alltime-btn{font-size:11px;font-weight:600;color:var(--slate-light);background:var(--ice);border:1px solid var(--border-light);border-radius:20px;padding:7px 13px;cursor:pointer;white-space:nowrap}
+.month-alltime-btn.active{background:var(--navy-mid);color:var(--white);border-color:var(--navy-mid)}
 .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
 .stat-card{background:var(--white);border:1px solid var(--border-light);border-radius:13px;padding:14px 16px;box-shadow:0 1px 3px rgba(15,31,61,0.05)}
 .stat-label{font-size:11px;color:var(--slate-light);letter-spacing:0.04em;text-transform:uppercase;margin-bottom:4px}
@@ -173,6 +199,7 @@ body{font-family:var(--sans);background:var(--ice);color:var(--ink);min-height:1
 
 /* RELOAD BAR */
 .reload-bar{position:fixed;top:0;left:50%;transform:translateX(-50%);max-width:430px;width:100%;background:var(--accent);color:var(--white);font-size:13px;font-weight:500;padding:11px 16px;padding-top:calc(11px + env(safe-area-inset-top));display:none;align-items:center;justify-content:space-between;z-index:300;box-shadow:0 2px 10px rgba(0,0,0,0.2)}
+.reload-bar.show{display:flex}
 .reload-btn{background:rgba(255,255,255,0.2);border:none;color:var(--white);font-size:12px;font-weight:600;padding:6px 14px;border-radius:20px;cursor:pointer}
 .sync-status{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);max-width:430px;width:calc(100% - 36px);text-align:center;font-size:11px;color:var(--slate-light);z-index:35;pointer-events:none}
 
@@ -237,6 +264,12 @@ body{font-family:var(--sans);background:var(--ice);color:var(--ink);min-height:1
 <div class="section" id="tab-personal"><div id="personal-list"></div></div>
 <div class="section" id="tab-cabs"><div id="cabs-list"></div></div>
 <div class="section" id="tab-summary">
+  <div class="summary-month-row">
+    <button class="month-nav-btn" onclick="shiftSummaryMonth(-1)" aria-label="Previous month"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <span class="summary-month-label" id="summary-month-label"></span>
+    <button class="month-nav-btn" onclick="shiftSummaryMonth(1)" aria-label="Next month"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
+    <button class="month-alltime-btn" id="month-alltime-btn" onclick="setSummaryAllTime()">All time</button>
+  </div>
   <div class="stat-grid" id="stat-grid"></div>
   <div class="section-header-label">Meals served — company guests</div>
   <div class="summary-card" id="meals-summary"></div>
@@ -256,8 +289,8 @@ body{font-family:var(--sans);background:var(--ice);color:var(--ink);min-height:1
     <div class="modal-handle"></div>
     <div class="modal-title" id="modal-title">Add company guest</div>
     <div class="field">
-      <label>Name / group</label>
-      <input id="f-name" placeholder="e.g. Mr. Chatterjee & team" autocomplete="off"/>
+      <label>Name</label>
+      <input id="f-name" placeholder="Enter Guest Name" autocomplete="off"/>
     </div>
     <div class="field" id="f-org-field">
       <label>Company / organisation</label>
@@ -277,7 +310,7 @@ body{font-family:var(--sans);background:var(--ice);color:var(--ink);min-height:1
     </div>
     <div class="field">
       <label>No. of guests</label>
-      <input id="f-count" type="number" min="1" value="2"/>
+      <input id="f-count" type="number" min="1" value="1"/>
     </div>
     <div class="field">
       <label>Notes</label>
@@ -299,11 +332,11 @@ body{font-family:var(--sans);background:var(--ice);color:var(--ink);min-height:1
     </div>
     <div class="field-row">
       <div class="field"><label>From</label><input id="cf-from" placeholder="e.g. Bungalow" autocomplete="off"/></div>
-      <div class="field"><label>To</label><input id="cf-to" placeholder="e.g. NJP Station" autocomplete="off"/></div>
+      <div class="field"><label>To</label><input id="cf-to" placeholder="e.g. Airport" autocomplete="off"/></div>
     </div>
     <div class="field">
       <label>Cab / driver name</label>
-      <input id="cf-cabname" placeholder="e.g. Bablu's Tata Sumo" autocomplete="off"/>
+      <input id="cf-cabname" placeholder="e.g. Pinku's Bolero Neo" autocomplete="off"/>
     </div>
     <div class="field">
       <label>Linked guest (optional)</label>
@@ -349,6 +382,30 @@ function fmtDate(d){if(!d)return'—';const[y,m,day]=d.split('-');return`${day}/
 function fmtDateLong(d){if(!d)return'';const[y,m,day]=d.split('-');const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return`${parseInt(day)} ${months[parseInt(m)-1]}`}
 function nightsBetween(a,b){const ms=new Date(b||today())-new Date(a);return ms>0?Math.round(ms/86400000):0}
 function isActive(g){return!g.checkout||g.checkout>today()}
+
+function toggleCardCollapse(gid,isPersonal){
+  const list=isPersonal?state.personal:state.company;
+  const g=list.find(x=>x.id===gid);if(!g)return;
+  g._collapsed=!g._collapsed;
+  save();
+  if(isPersonal)renderPersonal();else renderCompany();
+}
+
+function toggleCabCollapse(cid){
+  const c=state.cabs.find(x=>x.id===cid);if(!c)return;
+  c._collapsed=!c._collapsed;
+  save();renderCabs();
+}
+
+// Tracks which guests have "see more" expanded on their reimbursement bill.
+// Intentionally NOT persisted/synced — purely a local view-state toggle that
+// resets to collapsed (first 2 days only) on reload, per design decision.
+const _billExpanded=new Set();
+function toggleBillExpand(gid){
+  if(_billExpanded.has(gid))_billExpanded.delete(gid);
+  else _billExpanded.add(gid);
+  renderCompany();
+}
 
 // Generate list of dates between checkin and checkout (or today)
 function getDays(g){
@@ -581,6 +638,13 @@ function toggleCabStatus(cid){
   save();renderCabs();
 }
 
+function toggleReimbursementStatus(gid){
+  const g=state.company.find(x=>x.id===gid);if(!g)return;
+  if(isActive(g))return; // can't file until the stay (and bill) is final
+  g.reimbursementStatus=g.reimbursementStatus==='filed'?'pending':'filed';
+  save();renderCompany();
+}
+
 function guestNameFromRef(ref){
   if(!ref)return'';
   const[type,idStr]=ref.split(':');
@@ -597,24 +661,43 @@ function renderCabs(){
   }
   el.innerHTML=state.cabs.map(c=>{
     const guestName=guestNameFromRef(c.guestRef);
-    return`<div class="cab-card">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-        <div class="cab-route">${c.from||'—'}<span class="arrow">→</span>${c.to||'—'}</div>
+    const isPaid=c.status==='paid';
+    // Default: pending trips open, paid trips collapsed — unless explicitly toggled.
+    const collapsed=c._collapsed!==undefined?c._collapsed:isPaid;
+
+    const collapsedSummaryHtml=collapsed?`<div class="collapsed-total-row">
+      <span>${c.amount!=null?'Amount':'No amount yet'}</span>
+      ${c.amount!=null?`<span class="amt">₹${c.amount.toLocaleString('en-IN')}</span>`:''}
+    </div>`:'';
+
+    const expandedBodyHtml=collapsed?'':`
+      <div class="cab-card-body">
+        ${c.notes?`<div style="font-size:12px;color:var(--ink-light);margin-bottom:10px;font-style:italic">${c.notes}</div>`:''}
+        <div class="cab-amount-row">
+          ${c.amount!=null?`<div class="cab-amount">₹${c.amount.toLocaleString('en-IN')}</div>`:`<div class="cab-amount unset">Amount not added yet</div>`}
+          <button class="cab-toggle-btn ${isPaid?'is-paid':'is-pending'}" onclick="toggleCabStatus(${c.id})">${isPaid?'✓ Paid':'Pending'}</button>
+        </div>
+        <div class="card-actions" style="padding:14px 0 0">
+          <button class="action-btn edit-btn" onclick="openEditCabModal(${c.id})">Edit</button>
+          <button class="action-btn delete-btn" onclick="deleteCab(${c.id})">Remove</button>
+        </div>
+      </div>`;
+
+    return`<div class="cab-card${collapsed?' is-collapsed':''}">
+      <div class="cab-card-head" onclick="toggleCabCollapse(${c.id})">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+          <div class="cab-route">${c.from||'—'}<span class="arrow">→</span>${c.to||'—'}</div>
+          <span class="collapse-chevron"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
+        </div>
+        <div class="cab-meta-row">
+          <span class="meta-pill">📅 ${fmtDate(c.date)}</span>
+          ${c.cabName?`<span class="meta-pill">🚖 ${c.cabName}</span>`:''}
+          ${guestName?`<span class="meta-pill">👤 ${guestName}</span>`:''}
+          <span class="status-pill ${isPaid?'status-paid':'status-pending'}">${isPaid?'Paid':'Pending'}</span>
+        </div>
       </div>
-      <div class="cab-meta-row">
-        <span class="meta-pill">📅 ${fmtDate(c.date)}</span>
-        ${c.cabName?`<span class="meta-pill">🚖 ${c.cabName}</span>`:''}
-        ${guestName?`<span class="meta-pill">👤 ${guestName}</span>`:''}
-      </div>
-      ${c.notes?`<div style="font-size:12px;color:var(--ink-light);margin-top:6px;font-style:italic">${c.notes}</div>`:''}
-      <div class="cab-amount-row">
-        ${c.amount!=null?`<div class="cab-amount">₹${c.amount.toLocaleString('en-IN')}</div>`:`<div class="cab-amount unset">Amount not added yet</div>`}
-        <button class="cab-toggle-btn ${c.status==='paid'?'is-paid':'is-pending'}" onclick="toggleCabStatus(${c.id})">${c.status==='paid'?'✓ Paid':'Pending'}</button>
-      </div>
-      <div class="card-actions" style="padding:14px 0 0">
-        <button class="action-btn edit-btn" onclick="openEditCabModal(${c.id})">Edit</button>
-        <button class="action-btn delete-btn" onclick="deleteCab(${c.id})">Remove</button>
-      </div>
+      ${collapsedSummaryHtml}
+      ${expandedBodyHtml}
     </div>`;
   }).join('');
 }
@@ -641,7 +724,7 @@ function saveGuest(){
     }
   } else {
     const g={id:Date.now(),name,checkin,checkout,count,notes,meals:{},alcoholCost:{},_activeDay:checkin||today()};
-    if(_modalMode==='company'){g.org=document.getElementById('f-org').value.trim();g.purpose=document.getElementById('f-purpose').value.trim();state.company.unshift(g)}
+    if(_modalMode==='company'){g.org=document.getElementById('f-org').value.trim();g.purpose=document.getElementById('f-purpose').value.trim();g.reimbursementStatus='pending';state.company.unshift(g)}
     else{g.relation=document.getElementById('f-relation').value.trim();state.personal.unshift(g)}
   }
   save();closeModal();render();
@@ -684,9 +767,9 @@ function calcBill(g){
     MEALS_C.forEach(m=>{
       const n=dayMeals[m]||0;if(!n)return;
       const amt=n*PRICES[m];dayTotal+=amt;
-      items.push(`${m}: ${n}×₹${PRICES[m]} = ₹${amt.toLocaleString('en-IN')}`);
+      items.push({label:`${m} · ${n} pax`,amt});
     });
-    if(alcCost){dayTotal+=alcCost;items.push(`Alcohol: ₹${alcCost.toLocaleString('en-IN')}`)}
+    if(alcCost){dayTotal+=alcCost;items.push({label:'Alcohol',amt:alcCost})}
     if(items.length){total+=dayTotal;dayRows.push({date,items,dayTotal})}
   });
   return{dayRows,total};
@@ -704,6 +787,9 @@ function renderCompany(){
     const days=getDays(g);
     const activeDay=g._activeDay||(days[0]||today());
     const bill=calcBill(g);
+    // Default: active guests open, checked-out guests collapsed — unless the
+    // person has explicitly toggled it, in which case _collapsed wins.
+    const collapsed=g._collapsed!==undefined?g._collapsed:!active;
 
     const dayTabsHtml=days.length?`
       <div class="day-tabs-wrap">
@@ -739,35 +825,50 @@ function renderCompany(){
       </div>
     </div>`;
 
+    const DAYS_SHOWN_BY_DEFAULT=2;
+    const billExpanded=_billExpanded.has(g.id);
+    const visibleDayRows=billExpanded?bill.dayRows:bill.dayRows.slice(0,DAYS_SHOWN_BY_DEFAULT);
+    const hiddenDayRows=billExpanded?[]:bill.dayRows.slice(DAYS_SHOWN_BY_DEFAULT);
+    const hiddenAmt=hiddenDayRows.reduce((s,dr)=>s+dr.dayTotal,0);
+
+    const dayBlockHtml=dr=>`<div class="bill-day">
+      <div class="bill-day-head"><span class="bill-day-date">${fmtDateLong(dr.date)}</span><span class="bill-day-amt">₹${dr.dayTotal.toLocaleString('en-IN')}</span></div>
+      ${dr.items.map(i=>`<div class="bill-row"><span>${i.label}</span><span>₹${i.amt.toLocaleString('en-IN')}</span></div>`).join('')}
+    </div>`;
+
+    const seeMoreHtml=hiddenDayRows.length?`<div class="bill-seemore" onclick="toggleBillExpand(${g.id})">
+      <span class="bill-seemore-label">See ${hiddenDayRows.length} more day${hiddenDayRows.length!==1?'s':''} ↓</span>
+      <span class="bill-seemore-amt">+ ₹${hiddenAmt.toLocaleString('en-IN')}</span>
+    </div>`:(billExpanded&&bill.dayRows.length>DAYS_SHOWN_BY_DEFAULT?`<div class="bill-seemore" onclick="toggleBillExpand(${g.id})">
+      <span class="bill-seemore-label">Show less ↑</span>
+    </div>`:'');
+
+    const isFiled=g.reimbursementStatus==='filed';
+    // Claiming only makes sense once the stay is over and the bill is final —
+    // while the guest is still active, the total can still change.
+    const canFile=!active;
+
+    const filingRowHtml=bill.total>0?(canFile?`<div class="bill-filing-row">
+        <span class="bill-filing-label">${isFiled?'Claimed':'Pending to claim'}</span>
+        <button class="cab-toggle-btn ${isFiled?'is-paid':'is-pending'}" onclick="toggleReimbursementStatus(${g.id})">${isFiled?'✓ Claimed':'Claim reimbursement'}</button>
+      </div>`:`<div class="bill-filing-row">
+        <span class="bill-filing-label" style="font-style:italic">Available to claim once checked out</span>
+      </div>`):'';
+
     const billHtml=bill.total>0?`<div class="bill-box">
       <div class="bill-title">Reimbursement summary</div>
-      <div class="bill-rows">
-        ${bill.dayRows.map(dr=>`
-          <div style="margin-bottom:6px">
-            <div style="font-size:11px;font-weight:600;color:var(--slate-light);margin-bottom:3px">${fmtDateLong(dr.date)}</div>
-            ${dr.items.map(i=>`<div class="bill-row" style="padding-left:8px"><span style="color:var(--ink-light)">${i}</span></div>`).join('')}
-          </div>`).join('')}
-      </div>
-      <div class="bill-total-row"><span>Total to reimburse</span><span>₹${bill.total.toLocaleString('en-IN')}</span></div>
+      ${visibleDayRows.map(dayBlockHtml).join('')}
+      ${seeMoreHtml}
+      <div class="bill-total-row"><span>Total to reimburse</span><span class="amt">₹${bill.total.toLocaleString('en-IN')}</span></div>
+      ${filingRowHtml}
     </div>`:'';
 
-    return`<div class="guest-card">
-      <div class="guest-card-head">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-          <div style="flex:1;min-width:0">
-            <div class="guest-name">${g.name}</div>
-            ${g.org?`<div class="guest-org">${g.org}</div>`:''}
-          </div>
-          <span class="status-pill ${active?'status-active':'status-out'}">${active?'Staying':'Checked out'}</span>
-        </div>
-        <div class="guest-meta-row">
-          <span class="meta-pill">📅 ${fmtDate(g.checkin)}${g.checkout?' → '+fmtDate(g.checkout):' → now'}</span>
-          <span class="meta-pill">🌙 ${nights} night${nights!==1?'s':''}</span>
-          <span class="meta-pill">👥 ${g.count} guest${g.count!==1?'s':''}</span>
-          ${g.purpose?`<span class="meta-pill">🎯 ${g.purpose}</span>`:''}
-        </div>
-        ${g.notes?`<div style="font-size:12px;color:var(--ink-light);margin-top:6px;font-style:italic">${g.notes}</div>`:''}
-      </div>
+    const collapsedSummaryHtml=collapsed?`<div class="collapsed-total-row">
+      <span>${bill.total>0?(canFile?(isFiled?'Claimed · Reimbursement total':'Pending to claim'):'Reimbursement total'):'No bill yet'}</span>
+      ${bill.total>0?`<span class="amt">₹${bill.total.toLocaleString('en-IN')}</span>`:''}
+    </div>`:'';
+
+    const expandedBodyHtml=collapsed?'':`
       ${dayTabsHtml}
       <div class="meal-section">
         <div class="meal-section-title">Meals served${days.length?' — '+fmtDateLong(activeDay):''}</div>
@@ -779,7 +880,28 @@ function renderCompany(){
         <button class="action-btn edit-btn" onclick="openEditModal(${g.id},false)">Edit</button>
         ${active?`<button class="action-btn checkout-btn" onclick="checkout(${g.id},false)">Check out</button>`:''}
         <button class="action-btn delete-btn" onclick="deleteGuest(${g.id},false)">Remove</button>
+      </div>`;
+
+    return`<div class="guest-card${collapsed?' is-collapsed':''}">
+      <div class="guest-card-head" onclick="toggleCardCollapse(${g.id},false)">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+          <div style="flex:1;min-width:0">
+            <div class="guest-name">${g.name}</div>
+            ${g.org?`<div class="guest-org">${g.org}</div>`:''}
+          </div>
+          <span class="collapse-chevron"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
+          <span class="status-pill ${active?'status-active':'status-out'}">${active?'Staying':'Checked out'}</span>
+        </div>
+        <div class="guest-meta-row">
+          <span class="meta-pill">📅 ${fmtDate(g.checkin)}${g.checkout?' → '+fmtDate(g.checkout):' → now'}</span>
+          <span class="meta-pill">🌙 ${nights} night${nights!==1?'s':''}</span>
+          <span class="meta-pill">👥 ${g.count} guest${g.count!==1?'s':''}</span>
+          ${g.purpose?`<span class="meta-pill">🎯 ${g.purpose}</span>`:''}
+        </div>
+        ${(!collapsed&&g.notes)?`<div style="font-size:12px;color:var(--ink-light);margin-top:6px;font-style:italic">${g.notes}</div>`:''}
       </div>
+      ${collapsedSummaryHtml}
+      ${expandedBodyHtml}
     </div>`;
   }).join('');
 }
@@ -818,39 +940,97 @@ function renderPersonal(){
 }
 
 // ── Summary ────────────────────────────────────────────────────
+// null = all-time view. Otherwise a 'YYYY-MM' string for the selected month.
+if(state._summaryMonth===undefined)state._summaryMonth=null;
+
+function monthLabel(ym){
+  const[y,m]=ym.split('-');
+  const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  return`${months[parseInt(m)-1]} ${y}`;
+}
+
+function shiftSummaryMonth(delta){
+  const base=state._summaryMonth||today().slice(0,7);
+  const[y,m]=base.split('-').map(Number);
+  const d=new Date(y,m-1+delta,1);
+  state._summaryMonth=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  renderSummary();
+}
+
+function setSummaryAllTime(){
+  state._summaryMonth=null;
+  renderSummary();
+}
+
 function renderSummary(){
+  const ym=state._summaryMonth;
+  const inMonth=date=>!ym||date.slice(0,7)===ym;
+
+  document.getElementById('summary-month-label').textContent=ym?monthLabel(ym):'All time';
+  document.getElementById('month-alltime-btn').classList.toggle('active',!ym);
+
   const allG=[...state.company,...state.personal];
   const active=allG.filter(isActive);
-  const totalNights=allG.reduce((s,g)=>s+(g.checkin&&g.checkout?nightsBetween(g.checkin,g.checkout):0),0);
-  let totalBill=0;state.company.forEach(g=>{totalBill+=calcBill(g).total});
+
+  // Stays/nights that overlap the selected month at all (still counted as
+  // "this month's stays" even if the guest checked in earlier or checks out
+  // later — the stay touched this month).
+  const staysThisScope=ym?allG.filter(g=>{
+    if(!g.checkin)return false;
+    const days=getDays(g);
+    return days.some(d=>d.slice(0,7)===ym);
+  }):allG;
+  const totalNights=staysThisScope.reduce((s,g)=>s+(g.checkin&&g.checkout?nightsBetween(g.checkin,g.checkout):0),0);
+
+  // Bill, meals, and alcohol are filtered at the DAY level so a stay
+  // spanning a month boundary only contributes the days that actually fall
+  // in the selected month.
+  let totalBill=0,outstandingBill=0;
   const mealTotals={Breakfast:0,Lunch:0,Tea:0,Dinner:0};
   let totalAlcohol=0;
   state.company.forEach(g=>{
-    Object.values(g.meals||{}).forEach(dayM=>{MEALS_C.forEach(m=>{mealTotals[m]=(mealTotals[m]||0)+(dayM[m]||0)})});
-    Object.values(g.alcoholCost||{}).forEach(v=>{totalAlcohol+=v});
+    const bill=calcBill(g);
+    const relevantDayRows=bill.dayRows.filter(dr=>inMonth(dr.date));
+    const guestScopedTotal=relevantDayRows.reduce((s,dr)=>s+dr.dayTotal,0);
+    totalBill+=guestScopedTotal;
+    if(g.reimbursementStatus!=='filed')outstandingBill+=guestScopedTotal;
+    relevantDayRows.forEach(dr=>{
+      dr.items.forEach(i=>{
+        const mealName=MEALS_C.find(m=>i.label.startsWith(m));
+        if(mealName){
+          const dayMeals=g.meals&&g.meals[dr.date]||{};
+          mealTotals[mealName]=(mealTotals[mealName]||0)+(dayMeals[mealName]||0);
+        } else {
+          totalAlcohol+=i.amt;
+        }
+      });
+    });
   });
-  const cabTotal=state.cabs.reduce((s,c)=>s+(c.amount||0),0);
-  const cabPending=state.cabs.filter(c=>c.status!=='paid').reduce((s,c)=>s+(c.amount||0),0);
+
+  const cabsThisScope=state.cabs.filter(c=>inMonth(c.date));
+  const cabTotal=cabsThisScope.reduce((s,c)=>s+(c.amount||0),0);
+  const cabPending=cabsThisScope.filter(c=>c.status!=='paid').reduce((s,c)=>s+(c.amount||0),0);
+
   document.getElementById('stat-grid').innerHTML=`
     <div class="stat-card"><div class="stat-label">Active guests</div><div class="stat-value">${active.reduce((s,g)=>s+(g.count||1),0)}</div><div class="stat-sub">in bungalow now</div></div>
-    <div class="stat-card"><div class="stat-label">Total stays</div><div class="stat-value">${allG.length}</div><div class="stat-sub">${totalNights} nights total</div></div>
-    <div class="stat-card"><div class="stat-label">Company bill</div><div class="stat-value" style="font-size:20px;padding-top:2px">₹${totalBill.toLocaleString('en-IN')}</div><div class="stat-sub">all visits</div></div>
-    <div class="stat-card"><div class="stat-label">Personal visits</div><div class="stat-value">${state.personal.length}</div><div class="stat-sub">friends & family</div></div>
-    <div class="stat-card"><div class="stat-label">Cab trips</div><div class="stat-value">${state.cabs.length}</div><div class="stat-sub">₹${cabTotal.toLocaleString('en-IN')} total</div></div>
+    <div class="stat-card"><div class="stat-label">Stays this period</div><div class="stat-value">${staysThisScope.length}</div><div class="stat-sub">${totalNights} nights</div></div>
+    <div class="stat-card"><div class="stat-label">Outstanding</div><div class="stat-value" style="font-size:20px;padding-top:2px">₹${outstandingBill.toLocaleString('en-IN')}</div><div class="stat-sub">pending to claim</div></div>
+    <div class="stat-card"><div class="stat-label">Company bill</div><div class="stat-value" style="font-size:20px;padding-top:2px">₹${totalBill.toLocaleString('en-IN')}</div><div class="stat-sub">this period, total</div></div>
+    <div class="stat-card"><div class="stat-label">Cab trips</div><div class="stat-value">${cabsThisScope.length}</div><div class="stat-sub">₹${cabTotal.toLocaleString('en-IN')} total</div></div>
     <div class="stat-card"><div class="stat-label">Cab pending</div><div class="stat-value" style="font-size:20px;padding-top:2px">₹${cabPending.toLocaleString('en-IN')}</div><div class="stat-sub">not yet paid</div></div>
   `;
   document.getElementById('meals-summary').innerHTML=[
     ...Object.entries(mealTotals).map(([m,v])=>`<div class="summary-meal-row"><span style="color:var(--ink-mid)">${m}</span><span style="font-weight:600;color:var(--navy-deep)">${v} pax${v?` · ₹${(v*PRICES[m]).toLocaleString('en-IN')}`:''}</span></div>`),
     `<div class="summary-meal-row"><span style="color:var(--ink-mid)">Alcohol</span><span style="font-weight:600;color:var(--navy-deep)">${totalAlcohol?'₹'+totalAlcohol.toLocaleString('en-IN'):'—'}</span></div>`
   ].join('');
-  const paidCount=state.cabs.filter(c=>c.status==='paid').length;
-  document.getElementById('cabs-summary').innerHTML=state.cabs.length?[
-    `<div class="summary-meal-row"><span style="color:var(--ink-mid)">Total trips</span><span style="font-weight:600;color:var(--navy-deep)">${state.cabs.length}</span></div>`,
-    `<div class="summary-meal-row"><span style="color:var(--ink-mid)">Paid</span><span style="font-weight:600;color:var(--navy-deep)">${paidCount} of ${state.cabs.length}</span></div>`,
+  const paidCount=cabsThisScope.filter(c=>c.status==='paid').length;
+  document.getElementById('cabs-summary').innerHTML=cabsThisScope.length?[
+    `<div class="summary-meal-row"><span style="color:var(--ink-mid)">Total trips</span><span style="font-weight:600;color:var(--navy-deep)">${cabsThisScope.length}</span></div>`,
+    `<div class="summary-meal-row"><span style="color:var(--ink-mid)">Paid</span><span style="font-weight:600;color:var(--navy-deep)">${paidCount} of ${cabsThisScope.length}</span></div>`,
     `<div class="summary-meal-row"><span style="color:var(--ink-mid)">Total amount</span><span style="font-weight:600;color:var(--navy-deep)">₹${cabTotal.toLocaleString('en-IN')}</span></div>`,
     `<div class="summary-meal-row"><span style="color:var(--ink-mid)">Pending amount</span><span style="font-weight:600;color:var(--accent)">₹${cabPending.toLocaleString('en-IN')}</span></div>`
-  ].join('') : `<div class="summary-meal-row"><span style="color:var(--ink-light)">No cab trips logged yet</span></div>`;
-  document.getElementById('all-guests-list').innerHTML=[...state.company.map(g=>({...g,_type:'Company'})),...state.personal.map(g=>({...g,_type:'Personal'}))].map(g=>`
+  ].join('') : `<div class="summary-meal-row"><span style="color:var(--ink-light)">No cab trips ${ym?'this month':'logged yet'}</span></div>`;
+  document.getElementById('all-guests-list').innerHTML=[...staysThisScope.filter(g=>state.company.includes(g)).map(g=>({...g,_type:'Company'})),...staysThisScope.filter(g=>state.personal.includes(g)).map(g=>({...g,_type:'Personal'}))].map(g=>`
     <div class="guest-card" style="margin-bottom:8px">
       <div class="guest-card-head" style="border-bottom:none">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
@@ -861,7 +1041,7 @@ function renderSummary(){
           <span class="status-pill ${isActive(g)?'status-active':'status-out'}">${isActive(g)?'In':'Out'}</span>
         </div>
       </div>
-    </div>`).join('')||'<div class="empty-state" style="padding:20px"><div class="empty-text">No guests logged yet.</div></div>';
+    </div>`).join('')||`<div class="empty-state" style="padding:20px"><div class="empty-text">No guests ${ym?'this month':'logged yet'}.</div></div>`;
 }
 
 function checkout(gid,isPersonal){
